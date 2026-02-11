@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Domain {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  feedbacks Feedback[]
+  @@map("domains")
+}
+
+model TermLibrary {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  terms       Term[]
+  @@map("term_libraries")
+}
+
+model Term {
+  id           String      @id @default(cuid())
+  source       String
+  target       String
+  frequency    Int         @default(0)
+  type         String      @default("关键词")
+  sourceType   String      @default("TF-IDF")
+  note         String?
+  libraryId    String
+  library      TermLibrary @relation(fields: [libraryId], references: [id], onDelete: Cascade)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  @@unique([libraryId, source])
+  @@map("terms")
+}
+
+model Feedback {
+  id           String   @id @default(cuid())
+  sourceText   String
+  modelOutput  String
+  editedOutput String?
+  rating       Int      @default(4)
+  isGolden     Boolean  @default(false)
+  domainId     String?
+  domain       Domain?  @relation(fields: [domainId], references: [id])
+  createdAt    DateTime @default(now())
+  @@map("feedbacks")
+}
+
+model FeedbackMemory {
+  id        String   @id @default(cuid())
+  term      String   @unique
+  type      String
+  createdAt DateTime @default(now())
+  @@map("feedback_memories")
+}
+
+model TranslationHistory {
+  id             String   @id @default(cuid())
+  sourceText     String
+  translatedText String
+  domain         String   @default("通用")
+  usedGlossary   Boolean  @default(false)
+  termCount      Int      @default(0)
+  createdAt      DateTime @default(now())
+  @@map("translation_histories")
+}
+
+model MergeHistory {
+  id               String   @id @default(cuid())
+  inputFiles       String
+  outputFilename   String
+  conflictStrategy String
+  uniqueTerms      Int      @default(0)
+  conflicts        Int      @default(0)
+  createdAt        DateTime @default(now())
+  @@map("merge_histories")
+}
